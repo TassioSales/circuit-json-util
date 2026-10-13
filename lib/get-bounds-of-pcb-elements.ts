@@ -1,4 +1,5 @@
 import type { AnyCircuitElement } from "circuit-json"
+import { getStrokedPathBounds } from "./get-stroked-path-bounds"
 
 export interface PcbBounds {
   minX: number
@@ -160,6 +161,18 @@ export const getPcbElementBounds = (
 ): PcbBounds | null => {
   if (!elm.type.startsWith("pcb_")) return null
 
+  if (elm.type === "pcb_note_path" || elm.type === "pcb_silkscreen_path") {
+    const routePoints = getRoutePoints((elm as any).route)
+    const rawStrokeWidth = (elm as any).stroke_width
+    const strokeWidth =
+      typeof rawStrokeWidth === "number"
+        ? rawStrokeWidth
+        : typeof rawStrokeWidth === "string"
+          ? Number.parseFloat(rawStrokeWidth) || 0.1
+          : 0.1
+    const pathBounds = getStrokedPathBounds(routePoints, strokeWidth)
+    if (pathBounds) return pathBounds
+  }
   if (
     elm.type === "pcb_smtpad" &&
     elm.shape === "polygon" &&
